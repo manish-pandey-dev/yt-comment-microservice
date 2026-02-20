@@ -4,6 +4,7 @@ from app.services.youtube_service import fetch_latest_video
 from app.db.database import SessionLocal
 from app.db.models import Video
 from datetime import datetime
+from app.services.transcript_service import fetch_transcript
 
 app = FastAPI(title="YT Comment Microservice")
 
@@ -25,12 +26,15 @@ def check_latest_video():
     if existing:
         return {"message": "No new video"}
 
+    transcript = fetch_transcript(latest["video_id"])
+    
     video = Video(
         video_id=latest["video_id"],
         title=latest["title"],
-        published_at=datetime.fromisoformat(latest["published_at"].replace("Z", "+00:00"))
+        published_at=datetime.fromisoformat(latest["published_at"].replace("Z", "+00:00")),
+        transcript=transcript
     )
-
+    
     db.add(video)
     db.commit()
 
