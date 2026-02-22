@@ -12,6 +12,7 @@ class Video(Base):
     title = Column(String)
     published_at = Column(DateTime)
     transcript = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Comment(Base):

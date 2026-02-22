@@ -6,34 +6,61 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generate_comment(transcript: str) -> str:
+
+def summarize_transcript(transcript: str) -> str:
     if not transcript:
         return None
 
-    transcript_snippet = transcript[:3000]  # prevent huge payload
-
     prompt = f"""
-You are a thoughtful YouTube viewer.
+You are analyzing a YouTube video transcript.
 
-Create one meaningful comment based on this transcript.
+Create a structured summary with:
 
-Rules:
-- Maximum 250 characters
-- Mention one specific idea from the video
-- No emojis
-- No generic praise like "great video"
-- Sound human, not AI
-- No promotion
+1. 8-12 key bullet points
+2. Main argument of the speaker
+3. One surprising or strong insight
+
+Keep it concise but information-rich.
 
 Transcript:
-{transcript_snippet}
+{transcript}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+
+    return response.choices[0].message.content.strip()
+
+
+def generate_comment(summary: str) -> str:
+    if not summary:
+        return None
+
+    prompt = f"""
+You are a thoughtful YouTube viewer.
+
+Write ONE meaningful YouTube comment based on this summary.
+
+IMPORTANT:
+- Write in the same language as the original video.
+- If the video is Hindi, write in proper Devanagari script.
+- Max 250 characters.
+- Mention one specific idea.
+- No emojis.
+- No generic praise.
+- No promotion.
+- Sound natural and human.
+
+Summary:
+{summary}
+"""
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
         temperature=0.7
     )
 
