@@ -314,7 +314,7 @@ to quite from db - .quit
 git status
 git add .
 git commit -m "Add project README and documentation"
-git push origin main
+git push origin master
 git tag -a v0.1.0 -m "Initial working version with AI transcription and comment generation"
 git push origin v0.1.0
 git tag
