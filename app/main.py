@@ -7,9 +7,12 @@ from app.db.models import Comment
 from app.services.youtube_service import fetch_latest_video
 from app.services.transcript_service import fetch_transcript
 from app.services.ai_service import summarize_transcript, generate_comment
-
+from app.api.comments import router as comments_router
+from app.api.auth import router as auth_router
 
 app = FastAPI(title="YT Comment Microservice")
+app.include_router(comments_router)
+app.include_router(auth_router)
 
 Base.metadata.create_all(bind=engine)
 

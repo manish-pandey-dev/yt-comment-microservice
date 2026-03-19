@@ -23,3 +23,9 @@ class Comment(Base):
     content = Column(Text)
     status = Column(String, default="pending")  # pending/approved/posted/rejected
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class OAuthToken(Base):
+    __tablename__ = "oauth_tokens"
+
+    id = Column(Integer, primary_key=True)
+    refresh_token = Column(Text)
