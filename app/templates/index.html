@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YT Comment Dashboard</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        button { margin: 5px; padding: 8px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; }
+    </style>
+</head>
+<body>
+
+<h2>YouTube Comment Dashboard</h2>
+
+<select id="channelSelect"></select>
+<button onclick="checkVideo()">Check New Video</button>
+<button onclick="health()">Health</button>
+<button onclick="loadPending()">Load Pending</button>
+
+<h3>Pending Comments</h3>
+
+<table id="commentsTable">
+    <tr>
+        <th>ID</th>
+        <th>Content</th>
+        <th>Status</th>
+        <th>Actions</th>
+    </tr>
+</table>
+
+<script>
+
+loadChannels();
+
+async function checkVideo() {
+    const res = await fetch('/check');
+    const data = await res.json();
+    alert(JSON.stringify(data));
+}
+
+async function health() {
+    const res = await fetch('/health');
+    const data = await res.json();
+    alert(JSON.stringify(data));
+}
+
+async function loadPending() {
+    const res = await fetch('/comments/pending');
+    const data = await res.json();
+
+    const table = document.getElementById('commentsTable');
+
+    // clear rows
+    table.innerHTML = `
+        <tr>
+            <th>ID</th>
+            <th>Content</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    `;
+
+    data.forEach(c => {
+        const row = table.insertRow();
+
+        row.insertCell(0).innerText = c.id;
+        row.insertCell(1).innerText = c.content;
+        row.insertCell(2).innerText = c.status;
+
+        const actions = row.insertCell(3);
+
+        actions.innerHTML = `
+            <button onclick="approve(${c.id})">Approve</button>
+            <button onclick="reject(${c.id})">Reject</button>
+            <button onclick="post(${c.id})">Post</button>
+        `;
+    });
+}
+
+async function approve(id) {
+    await fetch(`/comments/${id}/approve`, { method: 'POST' });
+    loadPending();
+}
+
+async function reject(id) {
+    await fetch(`/comments/${id}/reject`, { method: 'POST' });
+    loadPending();
+}
+
+async function post(id) {
+    await fetch(`/comments/${id}/post`, { method: 'POST' });
+    loadPending();
+}
+
+async function loadChannels() {
+    const res = await fetch('/channels');
+    const data = await res.json();
+
+    const select = document.getElementById('channelSelect');
+    select.innerHTML = "";
+
+    data.forEach(c => {
+        const option = document.createElement("option");
+        option.value = c.id;
+        option.text = c.name;
+        select.appendChild(option);
+    });
+}
+
+async function checkVideo() {
+    const channelId = document.getElementById('channelSelect').value;
+
+    const res = await fetch(`/check/${channelId}`);
+    const data = await res.json();
+
+    alert(JSON.stringify(data));
+}
+
+</script>
+
+</body>
+</html>

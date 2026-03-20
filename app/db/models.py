@@ -8,6 +8,7 @@ class Video(Base):
     __tablename__ = "videos"
 
     id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(String, ForeignKey("channels.channel_id"))
     video_id = Column(String, unique=True, index=True)
     title = Column(String)
     published_at = Column(DateTime)
@@ -19,6 +20,7 @@ class Comment(Base):
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(String, ForeignKey("channels.channel_id"))
     video_id = Column(String, ForeignKey("videos.video_id"))
     content = Column(Text)
     status = Column(String, default="pending")  # pending/approved/posted/rejected
@@ -29,3 +31,11 @@ class OAuthToken(Base):
 
     id = Column(Integer, primary_key=True)
     refresh_token = Column(Text)
+
+class Channel(Base):
+    __tablename__ = "channels"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    channel_id = Column(String, unique=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

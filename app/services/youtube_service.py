@@ -5,14 +5,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("YOUTUBE_API_KEY")
-CHANNEL_ID = os.getenv("YOUTUBE_CHANNEL_ID")
 
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 
-def fetch_latest_video():
+def fetch_latest_video(channel_id: str):
     params = {
         "key": API_KEY,
-        "channelId": CHANNEL_ID,
+        "channelId": channel_id,
         "part": "snippet",
         "order": "date",
         "maxResults": 1,

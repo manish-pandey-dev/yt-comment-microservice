@@ -1,9 +1,13 @@
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
+from fastapi.responses import HTMLResponse
 from fastapi import FastAPI
 from datetime import datetime
 from app.db.database import Base, engine
 from app.db.database import SessionLocal
 from app.db.models import Video
 from app.db.models import Comment
+from app.db.models import Channel
 from app.services.youtube_service import fetch_latest_video
 from app.services.transcript_service import fetch_transcript
 from app.services.ai_service import summarize_transcript, generate_comment
@@ -14,20 +18,35 @@ app = FastAPI(title="YT Comment Microservice")
 app.include_router(comments_router)
 app.include_router(auth_router)
 
+templates = Jinja2Templates(directory="app/templates")
+
 Base.metadata.create_all(bind=engine)
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-
-@app.get("/check")
-def check_latest_video():
+@app.get("/channels")
+def get_channels():
     db = SessionLocal()
+    channels = db.query(Channel).all()
+    return channels
 
-    latest = fetch_latest_video()
+@app.get("/check/{channel_id}")
+def check_latest_video(channel_id: int):
+    db = SessionLocal()
+    
+    channel = db.query(Channel).filter(Channel.id == channel_id).first()
+    if not channel:
+        return {"error": "Channel not found"}
 
-    existing = db.query(Video).filter_by(video_id=latest["video_id"]).first()
+    latest = fetch_latest_video(channel.channel_id)
+
+    existing = db.query(Video).filter_by(video_id=latest["video_id"],channel_id=channel.id).first()
 
     if existing:
         return {"message": "No new video"}
@@ -42,6 +61,7 @@ def check_latest_video():
         generated = generate_comment(summary)
 
     video = Video(
+        channel_id=channel.channel_id,
         video_id=latest["video_id"],
         title=latest["title"],
         published_at=datetime.fromisoformat(
@@ -56,6 +76,7 @@ def check_latest_video():
 
     if generated:
         comment = Comment(
+            channel_id=channel.channel_id,
             video_id=latest["video_id"],
             content=generated,
             status="pending"
