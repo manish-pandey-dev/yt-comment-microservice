@@ -9,27 +9,26 @@ name: Deploy to Raspberry Pi
 on:
   push:
     branches:
-      - master       # runs when you push to master
+      - master
 
 jobs:
   deploy:
     name: SSH Deploy to Pi
-    runs-on: ubuntu-latest    # GitHub spins up a temporary Ubuntu machine
+    runs-on: ubuntu-latest
 
     steps:
 
-      # ── Step 1: Show what commit triggered this ──────────────────
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ── Step 2: SSH into Pi and deploy ───────────────────────────
       - name: Deploy to Raspberry Pi
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host:     ${{ secrets.PI_HOST }}        # Pi IP address
-          username: ${{ secrets.PI_USER }}         # Pi username
-          password: ${{ secrets.PI_PASSWORD }}     # Pi password
+          host:     ${{ secrets.PI_HOST }}
+          username: ${{ secrets.PI_USER }}
+          password: ${{ secrets.PI_PASSWORD }}
           port:     22
+          request_pty: false
           script: |
 
             echo "──────────────────────────────────"
@@ -48,10 +47,16 @@ jobs:
             # Install any new dependencies
             pip install -r requirements.txt
 
-            # Restart the app using pkill + restart
-            # (kills current uvicorn process and starts fresh)
+            # Kill existing uvicorn process if running
             pkill -f "uvicorn app.main:app" || true
-            nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
+
+            # Wait a moment for port to be released
+            sleep 2
+
+            # Start uvicorn fully detached from this SSH session
+            # disown ensures process keeps running after SSH closes
+            nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
+            disown $!
 
             echo "──────────────────────────────────"
             echo "Deployment complete!"
