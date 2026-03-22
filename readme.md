@@ -308,7 +308,9 @@ to table structure - .schema videos
 to quite from db - .quit
 
 
-
+copy db locally to see in intelliJ
+open power shell go to folder and run the command -
+scp manish651@raspberrypiMKP:~/github-projects/yt-comment-microservice/app.db .
 
 ------------------------------------
 git status

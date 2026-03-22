@@ -1,0 +1,58 @@
+# .github/workflows/deploy.yml
+# ─────────────────────────────────────────────────────────────────
+# Triggered on every push to master branch.
+# Connects to your Raspberry Pi via SSH and deploys latest code.
+# ─────────────────────────────────────────────────────────────────
+
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - master       # runs when you push to master
+
+jobs:
+  deploy:
+    name: SSH Deploy to Pi
+    runs-on: ubuntu-latest    # GitHub spins up a temporary Ubuntu machine
+
+    steps:
+
+      # ── Step 1: Show what commit triggered this ──────────────────
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # ── Step 2: SSH into Pi and deploy ───────────────────────────
+      - name: Deploy to Raspberry Pi
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host:     ${{ secrets.PI_HOST }}        # Pi IP address
+          username: ${{ secrets.PI_USER }}         # Pi username
+          password: ${{ secrets.PI_PASSWORD }}     # Pi password
+          port:     22
+          script: |
+
+            echo "──────────────────────────────────"
+            echo "Starting deployment..."
+            echo "──────────────────────────────────"
+
+            # Navigate to project folder
+            cd github-projects/yt-comment-microservice
+
+            # Pull latest code from GitHub
+            git pull origin master
+
+            # Activate Python virtual environment
+            source venv/bin/activate
+
+            # Install any new dependencies
+            pip install -r requirements.txt
+
+            # Restart the app using pkill + restart
+            # (kills current uvicorn process and starts fresh)
+            pkill -f "uvicorn app.main:app" || true
+            nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
+
+            echo "──────────────────────────────────"
+            echo "Deployment complete!"
+            echo "──────────────────────────────────"

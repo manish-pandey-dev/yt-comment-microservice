@@ -1,0 +1,22 @@
+# docker-compose.yml
+# ─────────────────────────────────────────────
+# LOCAL DEVELOPMENT ONLY — not used on the Pi
+# ─────────────────────────────────────────────
+# Usage:
+#   docker-compose up --build     ← start app
+#   docker-compose down           ← stop app
+#   docker-compose logs -f        ← watch logs
+# ─────────────────────────────────────────────
+
+services:
+  app:
+    build: .                        # uses your existing Dockerfile
+    container_name: yt_comment_app
+    ports:
+      - "8000:8080"                 # your Windows browser → localhost:8000
+    volumes:
+      - ./app:/app/app              # live reload — code changes reflect instantly
+      - ./app.db:/app/app.db        # persist SQLite DB between restarts
+    env_file:
+      - .env                        # loads your API keys from .env file
+    restart: unless-stopped
