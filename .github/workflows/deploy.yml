@@ -28,9 +28,7 @@ jobs:
           username: ${{ secrets.PI_USER }}
           password: ${{ secrets.PI_PASSWORD }}
           port:     22
-          request_pty: false
           script: |
-
             echo "──────────────────────────────────"
             echo "Starting deployment..."
             echo "──────────────────────────────────"
@@ -47,16 +45,9 @@ jobs:
             # Install any new dependencies
             pip install -r requirements.txt
 
-            # Kill existing uvicorn process if running
-            pkill -f "uvicorn app.main:app" || true
-
-            # Wait a moment for port to be released
-            sleep 2
-
-            # Start uvicorn fully detached from this SSH session
-            # disown ensures process keeps running after SSH closes
-            nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > app.log 2>&1 &
-            disown $!
+            # Restart the app via systemd
+            # systemd keeps uvicorn running independently of this SSH session
+            sudo systemctl restart yt-comment
 
             echo "──────────────────────────────────"
             echo "Deployment complete!"
