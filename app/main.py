@@ -13,10 +13,12 @@ from app.services.transcript_service import fetch_transcript
 from app.services.ai_service import summarize_transcript, generate_comment
 from app.api.comments import router as comments_router
 from app.api.auth import router as auth_router
+from app.api.channels import router as channels_router
 
 app = FastAPI(title="YT Comment Microservice")
 app.include_router(comments_router)
 app.include_router(auth_router)
+app.include_router(channels_router)
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -24,17 +26,25 @@ Base.metadata.create_all(bind=engine)
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
-@app.get("/channels")
-def get_channels():
+@app.get("/videos/{channel_id}")
+def get_videos_by_channel(channel_id: int):
     db = SessionLocal()
-    channels = db.query(Channel).all()
-    return channels
+    try:
+        channel = db.query(Channel).filter(Channel.id == channel_id).first()
+        if not channel:
+            return []
+        videos = db.query(Video).filter(
+            Video.channel_id == channel.channel_id
+        ).order_by(Video.created_at.desc()).all()
+        return videos
+    finally:
+        db.close()
 
 @app.get("/check/{channel_id}")
 def check_latest_video(channel_id: int):
@@ -46,7 +56,7 @@ def check_latest_video(channel_id: int):
 
     latest = fetch_latest_video(channel.channel_id)
 
-    existing = db.query(Video).filter_by(video_id=latest["video_id"],channel_id=channel.id).first()
+    existing = db.query(Video).filter_by(video_id=latest["video_id"],channel_id=channel.channel_id).first()
 
     if existing:
         return {"message": "No new video"}
